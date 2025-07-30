@@ -69,9 +69,9 @@ RUN sed -i '/app\.launch(/,/debug=/s/max_threads=1,/max_threads=1, server_name="
 # Open port 7860 in container
 EXPOSE 7860
 
-# Copy entrypoint.sh to container and make it executable
+# Copy entrypoint.sh to container, fix line endings, and make it executable
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Go to repository directory
 WORKDIR /app/SoniTranslate
