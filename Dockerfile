@@ -63,8 +63,14 @@ RUN /opt/conda/bin/conda run -n sonitr conda env config vars set YOUR_HF_TOKEN="
 # Set up environment variables in conda
 #RUN /opt/conda/bin/conda run -n sonitr conda env config vars set OPENAI_API_KEY="INSERT_TOKEN_HERE"
 
-# Modify app_rvc.py to add server_name="0.0.0.0" after max_threads=1
-RUN sed -i '/app\.launch(/,/debug=/s/max_threads=1,/max_threads=1, server_name="0.0.0.0",/' /app/SoniTranslate/app_rvc.py
+# Modify app_rvc.py to add server_name="0.0.0.0" and increase file size limits
+RUN sed -i '/app\.launch(/,/debug=/s/max_threads=1,/max_threads=1, server_name="0.0.0.0", max_file_size=5*1024,/' /app/SoniTranslate/app_rvc.py
+
+# Set environment variables for Gradio
+ENV GRADIO_SERVER_NAME="0.0.0.0"
+ENV GRADIO_SERVER_PORT=7860
+ENV GRADIO_MAX_FILE_SIZE="5gb"
+ENV PYTHONUNBUFFERED=1
 
 # Open port 7860 in container
 EXPOSE 7860

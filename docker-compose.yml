@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  sonitranslate:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+      - GRADIO_MAX_FILE_SIZE=5gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # Volume for temporary files
+    volumes:
+      - /tmp:/tmp
+    # Increase shared memory size for large models
+    shm_size: '8gb'
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

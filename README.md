@@ -44,27 +44,17 @@ Access the web interface at http://localhost:7860
 ## Easypanel Deployment
 
 ### With GPU Support
-Use Docker Compose mode with this configuration:
-```yaml
-version: '3.8'
-services:
-  sonitranslate:
-    build: .
-    ports:
-      - "7860:7860"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-```
+Use Docker Compose mode with the provided `docker-compose.yml` file or create a new app with Docker Compose mode and paste the contents.
 
-### CPU Only Mode
+### Template Mode (Without Docker Compose)
 Use Template deployment with:
 - Port: 7860
-- No additional configuration needed
+- Environment Variables (optional):
+  - `GRADIO_MAX_FILE_SIZE`: 5gb
+  - `YOUR_HF_TOKEN`: Your Hugging Face token
+- If you encounter upload errors, try:
+  - Increase Easypanel's proxy timeout settings
+  - Use smaller video files (under 500MB)
 
 ## Recent Changes
 
