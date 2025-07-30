@@ -17,7 +17,8 @@ ENV PATH=/opt/conda/bin:$PATH
 
 # Accept Conda Terms of Service for default channels
 RUN /opt/conda/bin/conda config --set channel_priority flexible && \
-    /opt/conda/bin/conda tos accept --all
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    /opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 # Create and activate the conda environment
 RUN /opt/conda/bin/conda create -n sonitr python=3.10 -y && \
