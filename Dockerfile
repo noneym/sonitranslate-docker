@@ -15,6 +15,10 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Add the path to conda to the environment
 ENV PATH=/opt/conda/bin:$PATH
 
+# Accept Conda Terms of Service for default channels
+RUN /opt/conda/bin/conda config --set channel_priority flexible && \
+    /opt/conda/bin/conda tos accept --all
+
 # Create and activate the conda environment
 RUN /opt/conda/bin/conda create -n sonitr python=3.10 -y && \
     /opt/conda/bin/conda run -n sonitr pip install pip==23.1.2
