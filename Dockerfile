@@ -3,7 +3,7 @@ FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # Install the necessary tools
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget git ffmpeg && \
+    apt-get install -y --no-install-recommends wget git ffmpeg nginx && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Miniconda
@@ -66,29 +66,29 @@ RUN /opt/conda/bin/conda run -n sonitr conda env config vars set YOUR_HF_TOKEN="
 # Modify app_rvc.py to add server_name="0.0.0.0"
 RUN sed -i '/app\.launch(/,/debug=/s/max_threads=1,/max_threads=1, server_name="0.0.0.0",/' /app/SoniTranslate/app_rvc.py
 
-# ============== HTTP OUTPUTS ACCESS CONFIGURATION ==============
+# ============== NGINX FOR OUTPUTS ==============
+# Create outputs directory
+RUN mkdir -p /app/SoniTranslate/outputs && chmod 755 /app/SoniTranslate/outputs
 
-# Create outputs directory if it doesn't exist
-RUN mkdir -p /app/SoniTranslate/outputs
+# Configure nginx to serve outputs directory
+RUN rm /etc/nginx/sites-enabled/default && \
+    echo 'server {' > /etc/nginx/sites-available/outputs && \
+    echo '    listen 8080;' >> /etc/nginx/sites-available/outputs && \
+    echo '    server_name localhost;' >> /etc/nginx/sites-available/outputs && \
+    echo '    ' >> /etc/nginx/sites-available/outputs && \
+    echo '    location /outputs/ {' >> /etc/nginx/sites-available/outputs && \
+    echo '        alias /app/SoniTranslate/outputs/;' >> /etc/nginx/sites-available/outputs && \
+    echo '        autoindex on;' >> /etc/nginx/sites-available/outputs && \
+    echo '        add_header Access-Control-Allow-Origin *;' >> /etc/nginx/sites-available/outputs && \
+    echo '    }' >> /etc/nginx/sites-available/outputs && \
+    echo '    ' >> /etc/nginx/sites-available/outputs && \
+    echo '    location / {' >> /etc/nginx/sites-available/outputs && \
+    echo '        return 301 /outputs/;' >> /etc/nginx/sites-available/outputs && \
+    echo '    }' >> /etc/nginx/sites-available/outputs && \
+    echo '}' >> /etc/nginx/sites-available/outputs && \
+    ln -s /etc/nginx/sites-available/outputs /etc/nginx/sites-enabled/outputs
 
-# Create symlink from outputs to gradio temp directory
-# This allows HTTP access to outputs via /file=/tmp/gradio/outputs/filename
-RUN mkdir -p /tmp/gradio && \
-    ln -sf /app/SoniTranslate/outputs /tmp/gradio/outputs
-
-# Set proper permissions for outputs directory
-RUN chmod 755 /app/SoniTranslate/outputs && \
-    chmod 755 /tmp/gradio/outputs
-
-# Create a script to maintain symlink on startup (in case /tmp gets cleared)
-RUN echo '#!/bin/bash' > /app/maintain_symlink.sh && \
-    echo 'mkdir -p /tmp/gradio' >> /app/maintain_symlink.sh && \
-    echo 'if [ ! -L /tmp/gradio/outputs ]; then' >> /app/maintain_symlink.sh && \
-    echo '    ln -sf /app/SoniTranslate/outputs /tmp/gradio/outputs' >> /app/maintain_symlink.sh && \
-    echo 'fi' >> /app/maintain_symlink.sh && \
-    chmod +x /app/maintain_symlink.sh
-
-# ================================================================
+# ==================================================
 
 # Set environment variables for Gradio
 ENV GRADIO_SERVER_NAME="0.0.0.0"
@@ -96,8 +96,8 @@ ENV GRADIO_SERVER_PORT=7860
 ENV GRADIO_MAX_FILE_SIZE="5gb"
 ENV PYTHONUNBUFFERED=1
 
-# Open port 7860 in container
-EXPOSE 7860
+# Open ports 7860 (Gradio) and 8080 (Outputs)
+EXPOSE 7860 8080
 
 # Copy entrypoint.sh to container, fix line endings, and make it executable
 COPY entrypoint.sh /app/entrypoint.sh
