@@ -66,6 +66,30 @@ RUN /opt/conda/bin/conda run -n sonitr conda env config vars set YOUR_HF_TOKEN="
 # Modify app_rvc.py to add server_name="0.0.0.0"
 RUN sed -i '/app\.launch(/,/debug=/s/max_threads=1,/max_threads=1, server_name="0.0.0.0",/' /app/SoniTranslate/app_rvc.py
 
+# ============== HTTP OUTPUTS ACCESS CONFIGURATION ==============
+
+# Create outputs directory if it doesn't exist
+RUN mkdir -p /app/SoniTranslate/outputs
+
+# Create symlink from outputs to gradio temp directory
+# This allows HTTP access to outputs via /file=/tmp/gradio/outputs/filename
+RUN mkdir -p /tmp/gradio && \
+    ln -sf /app/SoniTranslate/outputs /tmp/gradio/outputs
+
+# Set proper permissions for outputs directory
+RUN chmod 755 /app/SoniTranslate/outputs && \
+    chmod 755 /tmp/gradio/outputs
+
+# Create a script to maintain symlink on startup (in case /tmp gets cleared)
+RUN echo '#!/bin/bash' > /app/maintain_symlink.sh && \
+    echo 'mkdir -p /tmp/gradio' >> /app/maintain_symlink.sh && \
+    echo 'if [ ! -L /tmp/gradio/outputs ]; then' >> /app/maintain_symlink.sh && \
+    echo '    ln -sf /app/SoniTranslate/outputs /tmp/gradio/outputs' >> /app/maintain_symlink.sh && \
+    echo 'fi' >> /app/maintain_symlink.sh && \
+    chmod +x /app/maintain_symlink.sh
+
+# ================================================================
+
 # Set environment variables for Gradio
 ENV GRADIO_SERVER_NAME="0.0.0.0"
 ENV GRADIO_SERVER_PORT=7860
